@@ -25,15 +25,16 @@
     .btn:active { transform:translateY(1px); }
     .map-wrap { position:absolute; inset:0; }
     #map { position:absolute; inset:0; }
-    .hud { position:fixed; left:12px; right:12px; bottom:12px; z-index:10; display:grid; gap:8px; }
-    .card { background:rgba(15,23,42,.85); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px; backdrop-filter: blur(6px); }
+    .hud { position:fixed; left:12px; right:12px; bottom:12px; z-index: 1000; display:grid; gap:8px; pointer-events:none; }
+    .hud .card { pointer-events:auto; background:rgba(15,23,42,.85); border:1px solid rgba(255,255,255,.12);
+                 border-radius:14px; padding:12px; backdrop-filter: blur(6px); color:#e5e7eb; }
     .tbt { display:flex; align-items:baseline; gap:8px; }
     .tbt-main { font-size:20px; line-height:1.25; }
-    .tbt-sub { color:var(--muted); font-size:12px; }
+    .tbt-sub { color:#9ca3af; font-size:12px; }
     .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
     .cell { text-align:center; }
     .cell .v { font-size:18px; font-weight:700; }
-    .cell .k { font-size:11px; color:var(--muted); }
+    .cell .k { font-size:11px; color:#9ca3af; }
     .sr-live { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
     .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:#111827; color:#fff; border:1px solid #374151; padding:10px 14px; border-radius:10px; opacity:0; transition:opacity .25s; z-index:20; }
     .settings { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:20; }
@@ -42,6 +43,8 @@
     .row label { color:var(--muted); font-size:13px; }
     .row select,.row input[type="checkbox"] { background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:8px; }
     .actions { display:flex; justify-content:flex-end; gap:8px; }
+    /* 画面外のライブ領域（スクリーンリーダー/TTS用） */
+    .sr-live { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
   </style>
 </head>
 <body>
@@ -67,7 +70,7 @@
       </div>
       <div class="tbt-sub" id="hud-next">次の案内 —</div>
     </div>
-
+  
     <div class="card grid">
       <div class="cell">
         <div class="v" id="hud-distance-km">–</div>
