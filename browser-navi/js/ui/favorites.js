@@ -8,6 +8,11 @@ function loadHistory()   { return loadList(StorageKeys.HISTORY)   || []; }
 function saveFavorites(a){ saveList(StorageKeys.FAVORITES, a); }
 function saveHistory(a)  { saveList(StorageKeys.HISTORY,   a); }
 
+function emitHistoryInvalidated() {
+  try { window.dispatchEvent(new CustomEvent('search:history:invalidate')); }
+  catch (err) { console.warn('[SVN] failed to notify history change', err); }
+}
+
 function normalizePlace(p) {
   const lat = Number(p.lat), lng = Number(p.lng);
   return { id: p.id || makePlaceId(lat, lng), name: p.name || '目的地', lat, lng, ts: p.ts || Date.now() };
@@ -36,6 +41,7 @@ export function addHistory(item) {
   merged.unshift(p);
   trimMax(merged, 30);
   saveHistory(merged);
+  emitHistoryInvalidated();
 }
 
 function renderList(container, items, opt = {}) {
@@ -100,4 +106,5 @@ export function clearHistory() {
   saveHistory([]);
   toast('履歴を全消去しました');
   renderQuickLists();
+  emitHistoryInvalidated();
 }
