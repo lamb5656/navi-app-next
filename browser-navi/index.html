@@ -7,8 +7,6 @@
   <meta name="description" content="MapLibre × OpenRouteService。音声案内、リルート、HUD、PWA対応のブラウザナビ。" />
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="./manifest.json" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <!-- Vendor -->
   <link href="./vendor/maplibre-gl.css" rel="stylesheet" />
@@ -24,6 +22,7 @@
     <div class="brand">SwitchVoiceNavi</div>
     <div class="grow">
       <input id="search" class="input" type="search" placeholder="目的地を検索（例：名古屋駅）" autocomplete="off" />
+      <button id="btnSearch" class="btn" title="検索" aria-label="検索">検索</button>
       <button id="fav-toggle" class="btn icon-btn star" title="お気に入りに追加/削除" aria-pressed="false">★</button>
       <button id="btnStart" class="btn" title="ナビ開始">開始</button>
       <button id="btnStop" class="btn" title="ナビ終了">終了</button>
@@ -49,15 +48,13 @@
       <section>
         <h4 style="margin:8px 0 6px;">お気に入り</h4>
         <div id="favorites-list" class="list"></div>
-        <p class="muted">★ボタンで現在の目的地をお気に入りに登録</p>
+        <p class="muted">★ボタンで現在の目的地をお気に入りに登録できるにゃ</p>
       </section>
     </div>
   </aside>
 
   <!-- Map -->
-  <div class="map-wrap">
-    <div id="map" aria-label="地図"></div>
-  </div>
+  <div class="map-wrap"><div id="map" aria-label="地図"></div></div>
 
   <!-- HUD / TBT -->
   <section class="hud" aria-live="off">
