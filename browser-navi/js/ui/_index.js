@@ -5,10 +5,37 @@ import { setupSettings } from './settings-panel.js';
 import { setupStartStop } from './startstop.js';
 import { createHUD } from './hud.js';
 
+function resolveAddrInput(){
+  return (
+    $('addr') ||
+    document.getElementById('search') ||
+    document.querySelector('#search-input, [data-addr-input], input[name="addr"]') ||
+    null
+  );
+}
+
+function resolveSearchButton(){
+  return (
+    $('btnSearch') ||
+    document.getElementById('btn-search') ||
+    document.querySelector('[data-search-btn], button.search') ||
+    null
+  );
+}
+
+function resolveHistoryClear(){
+  return (
+    $('history-clear') ||
+    document.getElementById('btnHistoryClear') ||
+    null
+  );
+}
+
 export function bindUI(mapCtrl, navCtrl){
+
   const els = {
-    addr:            findAddrInput(),
-    btnSearch:       $('btnSearch'),
+    addr:            resolveAddrInput(),
+    btnSearch:       resolveSearchButton(),
     btnStart:        $('btnStart'),
     btnStop:         $('btnStop'),
     btnFollowToggle: $('btnFollowToggle'),
@@ -29,10 +56,13 @@ export function bindUI(mapCtrl, navCtrl){
     appMenu: $('appMenu'),
     favoritesList: $('favorites-list'),
     historyList: $('history-list'),
-    historyClear: $('history-clear'),
+    historyClear: resolveHistoryClear(),
     btnFavCurrent: $('btnFavCurrent'),
     avoidTollsToolbar: $('avoidTolls'),
   };
+
+  if (!els.addr) els.addr = resolveAddrInput();
+  if (!els.btnSearch) els.btnSearch = resolveSearchButton();
 
   const hud = createHUD();
   const hudSink = (snap) => hud.update(snap);
