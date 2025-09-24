@@ -1,6 +1,7 @@
 import { API_BASE } from '../../config.js';
 import { $, forceOpen, forceClose, toast } from './dom.js';
 
+// 全角→半角 & 住所っぽい表記のゆらぎ補正
 function normalizeJaAddress(input) {
   if (!input) return '';
   const z2h = s => s.replace(/[０-９Ａ-Ｚａ-ｚ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xFEE0));
@@ -63,7 +64,6 @@ function toArray(data) {
 }
 
 function extractRecord(r) {
-
   if (r && r.type === 'Feature') {
     const c = r.geometry && Array.isArray(r.geometry.coordinates) ? r.geometry.coordinates : [NaN, NaN];
     const p = r.properties || {};
@@ -79,7 +79,6 @@ function extractRecord(r) {
       importance: p.importance || 0
     };
   }
-
   return {
     lat: Number(r.lat ?? r.y ?? (r.geometry && r.geometry.coordinates && r.geometry.coordinates[1])),
     lon: Number(r.lon ?? r.x ?? (r.geometry && r.geometry.coordinates && r.geometry.coordinates[0])),
@@ -92,6 +91,21 @@ function extractRecord(r) {
     importance: r.importance || 0
   };
 }
+
+// --- 追加: 入力エレメントの堅牢取得 ---
+function grabAddrInputElement(fallback) {
+  if (fallback?.addr) return fallback.addr;
+  return (
+    document.getElementById('addr') ||
+    document.querySelector('#search-input, [data-addr-input], input[name="addr"]') ||
+    null
+  );
+}
+function currentQueryText(fallback) {
+  const el = grabAddrInputElement(fallback);
+  return (el && typeof el.value === 'string') ? el.value.trim() : '';
+}
+// --------------------------------------
 
 async function searchNominatim(rawInput, nearLngLat) {
   const q = normalizeJaAddress(rawInput);
@@ -169,9 +183,14 @@ export function setupSearch(els, mapCtrl) {
   }
 
   async function onSearch() {
-    const input = els.addr?.value?.trim();
+    // --- 変更: まずイベント経由の値が無くてもDOMから確実に取得 ---
+    let input = currentQueryText(els);
+    if (!input && els?.addr && typeof els.addr.value === 'string') {
+      input = els.addr.value.trim();
+    }
     if (!input) { toast('住所や施設名を入力してください'); return; }
-    forceOpen(els.searchCard);
+
+    forceOpen(els?.searchCard || $('#search-card'));
     state.nearLngLat = getCenter();
 
     let rawResults = [];
@@ -196,12 +215,12 @@ export function setupSearch(els, mapCtrl) {
     }).filter(x => Number.isFinite(x.lat) && Number.isFinite(x.lng));
 
     list.sort((a, b) => (b.score - a.score) || ((a.__distanceKm || 0) - (b.__distanceKm || 0)));
-
     renderList(list);
   }
 
   function renderList(items) {
-    const ul = els.searchList;
+    const ul = els?.searchList || $('#search-list');
+    if (!ul) return;
     ul.innerHTML = '';
     if (!items || !items.length) {
       const li = document.createElement('li');
@@ -236,10 +255,11 @@ export function setupSearch(els, mapCtrl) {
       li.addEventListener('click', (ev) => {
         if (ev.target.tagName === 'BUTTON' || ev.currentTarget === li) {
           const { lat, lng } = it;
-          els.addr.value = it.name;
+          const addrEl = grabAddrInputElement(els);
+          if (addrEl) addrEl.value = it.name;
           state.goalLngLat = [lng, lat];
           try { mapCtrl?.setGoal?.(lng, lat); } catch {}
-          forceClose(els.searchCard);
+          forceClose(els?.searchCard || $('#search-card'));
           toast('目的地をセットしました');
         }
       }, { capture: true });
@@ -249,11 +269,35 @@ export function setupSearch(els, mapCtrl) {
   }
 
   async function onFavCurrent() {
-    if (!state.goalLngLat || !els.addr?.value) { toast('まず目的地を検索してください'); return; }
+    if (!state.goalLngLat) { toast('まず目的地を検索してください'); return; }
     const [lng, lat] = state.goalLngLat;
-    window.__lastSelectedGoal = { name: els.addr.value, lng, lat };
+    const addrEl = grabAddrInputElement(els);
+    const name = addrEl && addrEl.value ? addrEl.value : 'お気に入り';
+    window.__lastSelectedGoal = { name, lng, lat };
     toast('現在の目的地をお気に入りに登録しました（メニュー→お気に入り）');
   }
+
+  // Enterキーで検索（IME考慮）
+  const addrEl = grabAddrInputElement(els);
+  if (addrEl) {
+    let composing = false;
+    addrEl.addEventListener('compositionstart', () => (composing = true));
+    addrEl.addEventListener('compositionend', () => (composing = false));
+    addrEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !composing) {
+        e.preventDefault();
+        onSearch();
+      }
+    });
+  }
+
+  // グローバルイベント（main.js からも発火）
+  window.addEventListener('search:submit', (e) => {
+    const q = (e.detail?.query ?? '').trim();
+    const el = grabAddrInputElement(els);
+    if (q && el) el.value = q;
+    onSearch();
+  });
 
   return { onSearch, onFavCurrent, state };
 }

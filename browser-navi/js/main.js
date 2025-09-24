@@ -5,12 +5,40 @@ import { bindUI } from './ui.js';
 import { renderQuickLists, clearHistory } from './ui/favorites.js';
 
 const btnHC = document.getElementById('history-clear');
-
 if (btnHC) {
   btnHC.addEventListener('click', () => {
     if (confirm('履歴を全消去しますか？')) clearHistory();
   });
 }
+
+// --- 追加: 検索UIの最低限の配線（UI実装に依存せず動く保険） ---
+function wireSearchShortcut() {
+  const addrEl =
+    document.getElementById('addr') ||
+    document.querySelector('#search-input, [data-addr-input], input[name="addr"]');
+  const btnSearch =
+    document.getElementById('btn-search') ||
+    document.querySelector('[data-search-btn], button.search');
+
+  const fire = () => {
+    const q = (addrEl && typeof addrEl.value === 'string' ? addrEl.value : '').trim();
+    window.dispatchEvent(new CustomEvent('search:submit', { detail: { query: q } }));
+  };
+
+  if (btnSearch) btnSearch.addEventListener('click', fire);
+  if (addrEl) {
+    let composing = false;
+    addrEl.addEventListener('compositionstart', () => (composing = true));
+    addrEl.addEventListener('compositionend', () => (composing = false));
+    addrEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !composing) {
+        e.preventDefault();
+        fire();
+      }
+    });
+  }
+}
+// ----------------------------------------------------------------------
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
@@ -37,10 +65,10 @@ if ('serviceWorker' in navigator) {
     ready(() => {
       try {
         bindUI(mapCtrl, navCtrl);
+        wireSearchShortcut(); // ← 追加：UI配線の保険
 
         window.mapCtrl = mapCtrl;
         window.navCtrl = navCtrl;
-        //console.log('[SVN] UI bound & controllers exposed on window');
       } catch (e) {
         console.error('[SVN] bindUI failed', e);
       }
