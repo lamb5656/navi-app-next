@@ -4,65 +4,62 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>SwitchVoiceNavi — ブラウザで動く音声ナビ</title>
-  <meta name="description" content="MapLibre × OpenRouteService。音声案内、リルート、HUD、料金回避、PWA対応のブラウザナビ。" />
+  <meta name="description" content="MapLibre × OpenRouteService。音声案内、リルート、HUD、PWA対応のブラウザナビ。" />
   <meta name="theme-color" content="#0f172a" />
   <link rel="manifest" href="./manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
+  <!-- Vendor -->
   <link href="./vendor/maplibre-gl.css" rel="stylesheet" />
   <script src="./vendor/maplibre-gl.js"></script>
 
+  <!-- App styles -->
   <link href="./styles.css" rel="stylesheet" />
-  <style>
-    :root { --bg:#0f172a; --panel:#0b1220; --text:#e5e7eb; --muted:#9ca3af; --accent:#38bdf8; }
-    html,body { height:100%; margin:0; background:#000; color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; }
-    .header { position:fixed; inset:0 0 auto 0; z-index:10; background:linear-gradient(180deg, rgba(0,0,0,.75), rgba(0,0,0,.2)); padding:8px 12px; backdrop-filter: blur(6px); display:flex; gap:8px; align-items:center; }
-    .brand { font-weight:700; letter-spacing:.3px; }
-    .grow { flex:1; display:flex; gap:8px; }
-    .input { flex:1; min-width:0; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:var(--text); border-radius:10px; padding:10px 12px; outline:none; }
-    .btn { background:rgba(255,255,255,.1); color:var(--text); border:1px solid rgba(255,255,255,.15); padding:10px 12px; border-radius:10px; cursor:pointer; }
-    .btn:active { transform:translateY(1px); }
-    .map-wrap { position:absolute; inset:0; }
-    #map { position:absolute; inset:0; }
-    .hud { position:fixed; left:12px; right:12px; bottom:12px; z-index: 1000; display:grid; gap:8px; pointer-events:none; }
-    .hud .card { pointer-events:auto; background:rgba(15,23,42,.85); border:1px solid rgba(255,255,255,.12);
-                 border-radius:14px; padding:12px; backdrop-filter: blur(6px); color:#e5e7eb; }
-    .tbt { display:flex; align-items:baseline; gap:8px; }
-    .tbt-main { font-size:20px; line-height:1.25; }
-    .tbt-sub { color:#9ca3af; font-size:12px; }
-    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; }
-    .cell { text-align:center; }
-    .cell .v { font-size:18px; font-weight:700; }
-    .cell .k { font-size:11px; color:#9ca3af; }
-    .sr-live { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
-    .toast { position:fixed; left:50%; bottom:90px; transform:translateX(-50%); background:#111827; color:#fff; border:1px solid #374151; padding:10px 14px; border-radius:10px; opacity:0; transition:opacity .25s; z-index:20; }
-    .settings { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:20; }
-    .settings .panel { width:min(560px, 92vw); background:var(--panel); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px; display:grid; gap:12px; }
-    .row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .row label { color:var(--muted); font-size:13px; }
-    .row select,.row input[type="checkbox"] { background:#0b1220; color:var(--text); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:8px; }
-    .actions { display:flex; justify-content:flex-end; gap:8px; }
-    /* 画面外のライブ領域（スクリーンリーダー/TTS用） */
-    .sr-live { position:absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden; }
-  </style>
 </head>
 <body>
+  <!-- Header -->
   <header class="header">
+    <button id="menu-btn" class="btn icon-btn" title="メニュー" aria-label="メニューを開く">☰</button>
     <div class="brand">SwitchVoiceNavi</div>
     <div class="grow">
       <input id="search" class="input" type="search" placeholder="目的地を検索（例：名古屋駅）" autocomplete="off" />
+      <button id="fav-toggle" class="btn icon-btn star" title="お気に入りに追加/削除" aria-pressed="false">★</button>
       <button id="btnStart" class="btn" title="ナビ開始">開始</button>
       <button id="btnStop" class="btn" title="ナビ終了">終了</button>
       <button id="btnSettings" class="btn" title="設定">設定</button>
     </div>
-    <button id="history-clear" class="btn" title="検索履歴クリア">履歴消去</button>
   </header>
 
+  <!-- Drawer -->
+  <div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+  <aside id="drawer" class="drawer" aria-hidden="true" aria-label="メニュー">
+    <div class="drawer-header">
+      <strong>メニュー</strong>
+      <button id="drawer-close" class="btn icon-btn" title="閉じる" aria-label="閉じる">×</button>
+    </div>
+    <div class="drawer-content">
+      <section>
+        <h4 style="margin:0 0 6px;">検索履歴</h4>
+        <div id="history-list" class="list"></div>
+        <div style="display:flex;gap:8px;">
+          <button id="btnHistoryClear" class="btn">履歴消去</button>
+        </div>
+      </section>
+      <section>
+        <h4 style="margin:8px 0 6px;">お気に入り</h4>
+        <div id="favorites-list" class="list"></div>
+        <p class="muted">★ボタンで現在の目的地をお気に入りに登録</p>
+      </section>
+    </div>
+  </aside>
+
+  <!-- Map -->
   <div class="map-wrap">
     <div id="map" aria-label="地図"></div>
   </div>
 
+  <!-- HUD / TBT -->
   <section class="hud" aria-live="off">
     <div class="card">
       <div class="tbt">
@@ -70,7 +67,7 @@
       </div>
       <div class="tbt-sub" id="hud-next">次の案内 —</div>
     </div>
-  
+
     <div class="card grid">
       <div class="cell">
         <div class="v" id="hud-distance-km">–</div>
@@ -87,10 +84,13 @@
     </div>
   </section>
 
+  <!-- SR live region -->
   <div id="aria-live" class="sr-live" aria-live="polite" aria-atomic="true"></div>
 
+  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- Settings -->
   <div class="settings" id="settings">
     <div class="panel">
       <h3 style="margin:0;font-size:16px;">設定</h3>
@@ -110,15 +110,24 @@
           <option value="dark">ダーク</option>
         </select>
       </div>
-      <div class="actions">
+      <div class="row" style="justify-content:flex-end;">
         <button id="btnSettingsClose" class="btn">閉じる</button>
       </div>
     </div>
   </div>
 
+  <!-- App scripts (順序重要) -->
   <script type="module" src="./js/map.js"></script>
   <script type="module" src="./js/nav.js"></script>
   <script type="module" src="./js/ui/hud.js"></script>
+
+  <script type="module" src="./js/ui/search.js"></script>
+  <script type="module" src="./js/ui/favorites.js"></script>
+  <script type="module" src="./js/ui/history.js"></script>
+
+  <!-- 最小UI制御（フォールバック） -->
+  <script type="module" src="./js/ui/shell.js"></script>
+
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
