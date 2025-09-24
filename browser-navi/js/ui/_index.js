@@ -7,7 +7,7 @@ import { createHUD } from './hud.js';
 
 export function bindUI(mapCtrl, navCtrl){
   const els = {
-    addr:            $('addr'),
+    addr:            findAddrInput(),
     btnSearch:       $('btnSearch'),
     btnStart:        $('btnStart'),
     btnStop:         $('btnStop'),

@@ -15,9 +15,11 @@ if (btnHC) {
 function wireSearchShortcut() {
   const addrEl =
     document.getElementById('addr') ||
+    document.getElementById('search') ||
     document.querySelector('#search-input, [data-addr-input], input[name="addr"]');
   const btnSearch =
     document.getElementById('btn-search') ||
+    document.getElementById('btnSearch') ||
     document.querySelector('[data-search-btn], button.search');
 
   const fire = () => {

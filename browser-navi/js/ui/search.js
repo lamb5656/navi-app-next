@@ -97,6 +97,7 @@ function grabAddrInputElement(fallback) {
   if (fallback?.addr) return fallback.addr;
   return (
     document.getElementById('addr') ||
+    document.getElementById('search') ||
     document.querySelector('#search-input, [data-addr-input], input[name="addr"]') ||
     null
   );
