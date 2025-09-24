@@ -5,6 +5,15 @@ import { setupSettings } from './settings-panel.js';
 import { setupStartStop } from './startstop.js';
 import { createHUD } from './hud.js';
 
+function findAddrInput() {
+  return (
+    document.getElementById('addr') ||
+    document.getElementById('search') ||
+    document.querySelector('#search-input, [data-addr-input], input[name="addr"]') ||
+    null
+  );
+}
+
 export function bindUI(mapCtrl, navCtrl){
   const els = {
     addr:            findAddrInput(),
